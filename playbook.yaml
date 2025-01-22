@@ -1,0 +1,64 @@
+- name: Configure EC2 instance
+  hosts: all
+  become: true
+  vars:
+    new_user: deploy_user
+  tasks:
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+
+    - name: Install curl
+      apt:
+        name: curl
+        state: present
+
+    - name: Create /opt/projects directory
+      file:
+        path: /opt/projects
+        state: directory
+        mode: '0755'
+
+    - name: Add a new user with sudo privileges
+      user:
+        name: "{{ new_user }}"
+        state: present
+        shell: /bin/bash
+
+    - name: Grant sudo privileges to the new user
+      copy:
+        dest: "/etc/sudoers.d/{{ new_user }}"
+        content: "{{ new_user }} ALL=(ALL) NOPASSWD:ALL\n"
+        mode: '0440'
+
+    - name: Install Nginx (Bonus Task)
+      apt:
+        name: nginx
+        state: present
+
+    - name: Create a simple HTML page
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Welcome</title>
+          </head>
+          <body>
+            <h1>Welcome to your EC2 instance!</h1>
+          </body>
+          </html>
+        mode: '0644'
+
+    - name: Start and enable Nginx service
+      service:
+        name: nginx
+        state: started
+        enabled: true
